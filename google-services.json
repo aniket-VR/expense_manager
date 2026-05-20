@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "817959311654",
+    "project_id": "tasker-847b3",
+    "storage_bucket": "tasker-847b3.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:817959311654:android:341d8bd9188a81dbe749e7",
+        "android_client_info": {
+          "package_name": "com.fastexpense.india"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBR3KholPj8Ste-5VNmry3Ajl3lbMs_yLI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -1,0 +1,162 @@
+// firestore.rules
+// ─────────────────────────────────────────────────────────
+// Security rules for Fast Expense Tracker.
+//
+// Access model summary:
+//
+//   /users            owner read/write; family members read-only (for member list)
+//   /accounts         owner only
+//   /transactions     owner full; family Head read-only for family txns
+//   /expenses         owner only (legacy)
+//   /categoryLimits   owner only
+//   /families         any auth read; Head write/delete; any auth create
+//   /familyInvites    any auth read; Head create/delete; member update (mark used)
+// ─────────────────────────────────────────────────────────
+
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ── Helpers ─────────────────────────────────────────────
+
+    function isAuthed() {
+      return request.auth != null;
+    }
+
+    function isOwner(res) {
+      return isAuthed() && res.data.userId == request.auth.uid;
+    }
+
+    function callerProfile() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    }
+
+    function isFamilyHead(familyId) {
+      return isAuthed() &&
+        get(/databases/$(database)/documents/families/$(familyId)).data.createdBy
+        == request.auth.uid;
+    }
+
+    // Head of the family stored on the transaction's familyId field
+    function isHeadOfFamily(txnFamilyId) {
+      return isAuthed()
+        && txnFamilyId != null
+        && callerProfile().role == 'head'
+        && callerProfile().familyId == txnFamilyId;
+    }
+
+    // Two users share a family
+    function sameFamily(targetUid) {
+      let mine   = callerProfile().familyId;
+      let theirs = get(/databases/$(database)/documents/users/$(targetUid)).data.familyId;
+      return isAuthed() && mine != null && mine == theirs;
+    }
+
+    // ── /users/{uid} ────────────────────────────────────────
+
+    match /users/{userId} {
+      // Full access to own profile
+      allow read, write: if isAuthed() && request.auth.uid == userId;
+      // Family members can read each other (for member list)
+      allow read: if sameFamily(userId);
+    }
+
+    // ── /accounts/{accountId} ───────────────────────────────
+
+    match /accounts/{accountId} {
+      allow read:   if isOwner(resource);
+      allow create: if isAuthed() && request.resource.data.userId == request.auth.uid;
+      allow update: if isOwner(resource);
+      allow delete: if isOwner(resource);
+    }
+
+    // ── /transactions/{txnId} ───────────────────────────────
+
+    match /transactions/{txnId} {
+      // Owner: full read + delete
+      allow read:   if isOwner(resource);
+      allow delete: if isOwner(resource);
+
+      // Family Head: read all family transactions
+      allow read: if isHeadOfFamily(resource.data.familyId);
+
+      // Create: authenticated, positive amount, valid type
+      allow create: if isAuthed()
+        && request.resource.data.userId == request.auth.uid
+        && request.resource.data.amount is number
+        && request.resource.data.amount > 0
+        && request.resource.data.type in ['income', 'expense']
+        && (request.resource.data.familyId == null
+            || request.resource.data.familyId is string);
+
+      // Immutable — no updates ever
+      allow update: if false;
+    }
+
+    // ── /expenses/{expenseId}  (legacy) ─────────────────────
+
+    match /expenses/{expenseId} {
+      allow read:   if isOwner(resource);
+      allow create: if isAuthed() && request.resource.data.userId == request.auth.uid;
+      allow delete: if isOwner(resource);
+      allow update: if false;
+    }
+
+    // ── /categoryLimits/{limitId} ────────────────────────────
+
+    match /categoryLimits/{limitId} {
+      allow read:   if isOwner(resource);
+      allow create: if isAuthed() && request.resource.data.userId == request.auth.uid;
+      allow update: if isOwner(resource);
+      allow delete: if isOwner(resource);
+    }
+
+    // ── /families/{familyId} ────────────────────────────────
+
+    match /families/{familyId} {
+      // Any authenticated user reads (invite validation, join flow)
+      allow read: if isAuthed();
+
+      // Any auth user can create (they become the Head)
+      allow create: if isAuthed()
+        && request.resource.data.createdBy == request.auth.uid
+        && request.resource.data.familyName is string
+        && request.resource.data.familyName.size() > 0
+        && request.resource.data.familyName.size() <= 50;
+
+      // Only the Head (createdBy) can update or delete
+      allow update: if isAuthed() && resource.data.createdBy == request.auth.uid;
+      allow delete: if isAuthed() && resource.data.createdBy == request.auth.uid;
+    }
+
+    // ── /familyInvites/{code} ────────────────────────────────
+
+    match /familyInvites/{code} {
+      // Any auth user reads (to validate a code before joining)
+      allow read: if isAuthed();
+
+      // Only the family Head can create invites
+      allow create: if isAuthed()
+        && isFamilyHead(request.resource.data.familyId)
+        && request.resource.data.status == 'active'
+        && request.resource.data.createdBy == request.auth.uid;
+
+      // A member may mark an invite 'used' (joining the family).
+      // The Head may also update (e.g. to expire). Strict validation:
+      allow update: if isAuthed() && (
+        // Member marks invite as used
+        (resource.data.status == 'active'
+          && request.resource.data.status == 'used'
+          && request.resource.data.usedBy == request.auth.uid
+          && request.resource.data.familyId == resource.data.familyId)
+        ||
+        // Head updates their own invite
+        isFamilyHead(resource.data.familyId)
+      );
+
+      // Only the Head can revoke (delete) an invite
+      allow delete: if isAuthed() && isFamilyHead(resource.data.familyId);
+    }
+  }
+}
