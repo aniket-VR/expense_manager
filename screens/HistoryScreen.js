@@ -13,6 +13,7 @@ import TransactionItem from '../components/TransactionItem';
 import useAuth     from '../hooks/useAuth';
 import useAccounts from '../hooks/useAccounts';
 
+
 const TIME_FILTERS = [
   { key: 'today', label: 'Today' },
   { key: 'week',  label: 'Week'  },
@@ -27,6 +28,9 @@ const TYPE_FILTERS = [
 ];
 
 const HistoryScreen = () => {
+
+ 
+
   const { Colors } = useTheme();
   const { user }   = useAuth();
   const { accounts } = useAccounts(user?.uid);

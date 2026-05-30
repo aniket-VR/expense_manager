@@ -26,6 +26,8 @@ import { formatCurrency } from '../utils/formatters';
 import { getCategoryMeta } from '../utils/constants';
 import { Button, Card, LoadingOverlay, EmptyState } from '../components/UI';
 import useAuth from '../hooks/useAuth';
+import { showRewardedAd, loadRewardedAd } from '../utils/RewardedAdManager';
+
 
 // ── Config ────────────────────────────────────────────────
 
@@ -36,6 +38,7 @@ const PERIODS = [
   { key: 'year',  label: 'This Year',  emoji: '📊' },
   { key: 'all',   label: 'All Time',   emoji: '🗃️' },
 ];
+
 
 // ── Small sub-components ──────────────────────────────────
 
@@ -79,6 +82,8 @@ const ExportScreen = () => {
   const [exportingCSV, setExportingCSV] = useState(false);
   const [fetchError,   setFetchError]   = useState('');
 
+
+  
   // Fetch transactions when period changes
   const loadData = useCallback(async () => {
     if (!user?.uid) return;
@@ -123,6 +128,8 @@ const ExportScreen = () => {
   // ── Export handlers ──────────────────────────────────────
 
   const handleExportPDF = async () => {
+    showRewardedAd();
+
     if (transactions.length === 0) {
       Alert.alert('No Data', 'No transactions found for this period.');
       return;
@@ -140,6 +147,8 @@ const ExportScreen = () => {
   };
 
   const handleExportCSV = async () => {
+    showRewardedAd();
+
     if (transactions.length === 0) {
       Alert.alert('No Data', 'No transactions found for this period.');
       return;

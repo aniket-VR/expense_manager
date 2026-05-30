@@ -16,12 +16,15 @@
       "bundleIdentifier": "com.fastexpense.india"
     },
     "android": {
+      "versionCode": 4,
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#0D1117"
       },
       "package": "com.fastexpense.india",
-      "googleServicesFile": "./google-services.json"
+      "googleServicesFile": "./google-services.json",
+        "edgeToEdgeEnabled": false
+
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -34,6 +37,13 @@
             "usesCleartextTraffic": true
           }
         }
+      ],
+      [
+        "react-native-google-mobile-ads",
+        {
+          "androidAppId": "ca-app-pub-4789655646781697~5148070846",
+          "iosAppId": "ca-app-pub-xxxxxxxx~xxxxxxxx"
+        }
       ]
     ],
     "extra": {
@@ -41,5 +51,6 @@
         "projectId": "84c7b868-8ae6-42cc-a2ec-4b16be8b20a2"
       }
     }
+    
   }
 }

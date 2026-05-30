@@ -11,6 +11,7 @@ import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Platform } from 'react-native';
 import { createBottomTabNavigator }   from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useTheme }           from '../context/ThemeContext';
 import { Typography, Spacing, Radius } from '../utils/theme';
@@ -38,38 +39,79 @@ const TAB_CONFIG = {
   Settings:  { emoji: '⚙️', label: 'Settings' },
 };
 
+
 const CustomTabBar = ({ state, descriptors, navigation }) => {
   const { Colors } = useTheme();
+  const insets = useSafeAreaInsets();
 
   return (
-    <View style={[T.bar, { backgroundColor: Colors.bgCard, borderTopColor: Colors.border }]}>
+    <View
+      style={[
+        T.bar,
+        {
+          backgroundColor: Colors.bgCard,
+          borderTopColor: Colors.border,
+          paddingBottom: insets.bottom > 0 ? insets.bottom : 8,
+          height: 60 + insets.bottom,
+        },
+      ]}
+    >
       {state.routes.map((route, index) => {
         const isFocused = state.index === index;
-        const isAdd     = route.name === 'Add';
-        const cfg       = TAB_CONFIG[route.name] || { emoji: '●', label: route.name };
+        const isAdd = route.name === 'Add';
+        const cfg = TAB_CONFIG[route.name] || { emoji: '●', label: route.name };
 
         const onPress = () => {
-          const event = navigation.emit({ type: 'tabPress', target: route.key, canPreventDefault: true });
-          if (!isFocused && !event.defaultPrevented) navigation.navigate(route.name);
+          const event = navigation.emit({
+            type: 'tabPress',
+            target: route.key,
+            canPreventDefault: true,
+          });
+
+          if (!isFocused && !event.defaultPrevented) {
+            navigation.navigate(route.name);
+          }
         };
 
         if (isAdd) {
           return (
-            <TouchableOpacity key={route.key} onPress={onPress}
-              style={[T.fab, { backgroundColor: Colors.accent, shadowColor: Colors.accent }]}
-              activeOpacity={0.8}>
+            <TouchableOpacity
+              key={route.key}
+              onPress={onPress}
+              style={[
+                T.fab,
+                {
+                  backgroundColor: Colors.accent,
+                  shadowColor: Colors.accent,
+                  marginBottom: insets.bottom > 0 ? insets.bottom : 5,
+                },
+              ]}
+              activeOpacity={0.8}
+            >
               <Text style={[T.fabText, { color: Colors.black }]}>＋</Text>
             </TouchableOpacity>
           );
         }
 
         return (
-          <TouchableOpacity key={route.key} onPress={onPress} style={T.tab} activeOpacity={0.7}>
+          <TouchableOpacity
+            key={route.key}
+            onPress={onPress}
+            style={T.tab}
+            activeOpacity={0.7}
+          >
             <Text style={T.emoji}>{cfg.emoji}</Text>
-            <Text style={[T.label, { color: isFocused ? Colors.accent : Colors.textMuted }]}>
+            <Text
+              style={[
+                T.label,
+                { color: isFocused ? Colors.accent : Colors.textMuted },
+              ]}
+            >
               {cfg.label}
             </Text>
-            {isFocused && <View style={[T.dot, { backgroundColor: Colors.accent }]} />}
+            {isFocused && (
+              <View style={[T.dot, { backgroundColor: Colors.accent }]} />
+            )}
           </TouchableOpacity>
         );
       })}
@@ -176,3 +218,44 @@ const T = StyleSheet.create({
   },
   fabText: { fontSize: 24, fontWeight: '900', lineHeight: 28 },
 });
+
+
+
+// const CustomTabBar = ({ state, descriptors, navigation }) => {
+//   const { Colors } = useTheme();
+
+//   return (
+//     <View style={[T.bar, { backgroundColor: Colors.bgCard, borderTopColor: Colors.border }]}>
+//       {state.routes.map((route, index) => {
+//         const isFocused = state.index === index;
+//         const isAdd     = route.name === 'Add';
+//         const cfg       = TAB_CONFIG[route.name] || { emoji: '●', label: route.name };
+
+//         const onPress = () => {
+//           const event = navigation.emit({ type: 'tabPress', target: route.key, canPreventDefault: true });
+//           if (!isFocused && !event.defaultPrevented) navigation.navigate(route.name);
+//         };
+
+//         if (isAdd) {
+//           return (
+//             <TouchableOpacity key={route.key} onPress={onPress}
+//               style={[T.fab, { backgroundColor: Colors.accent, shadowColor: Colors.accent }]}
+//               activeOpacity={0.8}>
+//               <Text style={[T.fabText, { color: Colors.black }]}>＋</Text>
+//             </TouchableOpacity>
+//           );
+//         }
+
+//         return (
+//           <TouchableOpacity key={route.key} onPress={onPress} style={T.tab} activeOpacity={0.7}>
+//             <Text style={T.emoji}>{cfg.emoji}</Text>
+//             <Text style={[T.label, { color: isFocused ? Colors.accent : Colors.textMuted }]}>
+//               {cfg.label}
+//             </Text>
+//             {isFocused && <View style={[T.dot, { backgroundColor: Colors.accent }]} />}
+//           </TouchableOpacity>
+//         );
+//       })}
+//     </View>
+//   );
+// };
